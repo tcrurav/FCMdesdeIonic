@@ -5,6 +5,7 @@ import { SplashScreen } from '@ionic-native/splash-screen/ngx';
 import { StatusBar } from '@ionic-native/status-bar/ngx';
 
 import { FCM, NotificationData } from '@ionic-native/fcm/ngx';
+import { FirebasetokenService } from './firebasetoken.service';
 
 @Component({
   selector: 'app-root',
@@ -15,7 +16,8 @@ export class AppComponent {
     private platform: Platform,
     private splashScreen: SplashScreen,
     private statusBar: StatusBar,
-    public fcm: FCM
+    public fcm: FCM,
+    private firebasetoken: FirebasetokenService
   ) {
     this.initializeApp();
   }
@@ -29,14 +31,21 @@ export class AppComponent {
         // Your best bet is to here store the token on the user's profile on the
         // Firebase database, so that when you want to send notifications to this 
         // specific user you can do it from Cloud Functions.
+        if(token){
+          this.firebasetoken.setToken(token);
+        }
         console.log("The token to use is: ",token);
       }).catch(error=>{
         //ocurrió un error al procesar el token
         console.error(error);
       });
 
-      this.fcm.onTokenRefresh().subscribe(
-        (token:string)=>console.log("Nuevo token",token),
+      this.fcm.onTokenRefresh().subscribe((token:string) => {
+        if(token){
+          this.firebasetoken.setToken(token);
+        }
+        console.log("Nuevo token", token)
+      },
         error=>console.error(error)
       );
 
@@ -53,7 +62,7 @@ export class AppComponent {
       // });
 
       this.fcm.onNotification().subscribe(
-        (data:NotificationData)=>{
+        (data:NotificationData) => {
           if(data.wasTapped){
             //ocurre cuando nuestra app está en segundo plano y hacemos tap en la notificación que se muestra en el dispositivo
             console.log("Received in background",JSON.stringify(data))
